@@ -1,6 +1,6 @@
 #compdef show_DuplicateLine
 
-# show_DuplicateLineのzsh用補完
+# show_DuplicateLineのzsh用補完ファイル
 _show_DuplicateLine() {
   local context curcontext=$curcontext state line
   typeset -A opt_args

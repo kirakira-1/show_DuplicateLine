@@ -5,44 +5,65 @@ function main() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo 'show_DuplicateLine Ver1.00'
     echo '  ファイル内の重複行を指定された方法で表示'
-    echo '  show_DuplicateLine [オプション] [ファイル] '
-    echo '    [オプション]'
-    echo '      -d   重複行を削除して表示'
-    echo '      -o   重複行のみを表示'
-    echo '      -a   重複行だとしても1度目は表示し、それ以降の重複は削除して表示'
-    echo '      -c   テキストはそのままで重複回数を表示'
-    echo '      -r   重複行を上位から表示'
-    echo '      -s   重複行を下位から表示'
-    echo '    省略   重複行を削除して表示'
+    echo '  show_DuplicateLine [オプション] [テキスト|ファイル] '
+    echo ''
+    echo '    -d   重複行を削除して表示'
+    echo '    -o   重複行のみを表示'
+    echo '    -a   重複行だとしても1度目は表示し、それ以降の重複は削除して表示'
+    echo '    -c   テキストはそのままで重複回数を表示'
+    echo '    -r   重複行を上位から表示'
+    echo '    -s   重複行を下位から表示'
+    echo '  省略   重複行を削除して表示'
+    echo ''
+    echo ''
+    echo ' ※パイプ経由について'
+    echo '  パイプ経由時に[テキスト|ファイル]を指定されてる場合は'
+    echo '  [テキスト|ファイル]\nパイプになります'
+    echo '  例'
+    echo '   echo -e "111\n222" | show_DuplicateLine -d "333"'
+    echo '   333'
+    echo '   111'
+    echo '   222'
     echo ''
     echo 'Copyright (c) 2020 kirakira  License: MIT'
     return
   fi
 
+  # パイプ
+  if [ -t 0 ] ; then _pipe=""; else _pipe="$(cat)"; fi
+
   # オプション処理
-  if [ -e "$1" ]; then
-    _f="$1"; _proc="";
-  else
-    if [ ! -e "$2" ]; then echo "あのぉ～ファイル存在しませんけど～！！"; return; fi
-    if [ -d "$2" ]; then echo "ファイル指定して欲しいんですけど～！！"; return; fi
-    _f="$2"; _proc="$1";
+  case "$1" in
+    -[a-zA-Z] ) _option=$(echo "$1" | tr '[:upper:]' '[:lower:]'); _fileFlag=$2;;
+    * ) _option="-d"; _fileFlag="$1";;
+  esac
+
+  # 無理ゲー
+  if [ -d "$_fileFlag" ] && [ -z "$_pipe" ]; then echo "ファイル指定して欲しいんですけど～！！"; return; fi
+  if [ -z "$_fileFlag" ] && [ -z "$_pipe" ]; then echo "何を表示すりゃええんすかねぇ～！"; return; fi
+
+  # 表示対象の取得
+  if [ -d "$_fileFlag" ]; then _text=""
+    elif [ -e "$_fileFlag" ]; then _text=$(cat $_fileFlag)
+    else _text=$_fileFlag
+  fi
+  if [ -n "$_pipe" ]; then
+    if [ -z "$_text" ]; then _text=$_pipe
+      else _text+=$(echo -e "\n$_pipe"); fi
   fi
 
-  # 
-  case "$_proc" in
+  # -a -r -s の表示
+  case "$_option" in
     "-a" )
-      # 重複行でも1回目は表示(-a)
-      awk '!a[$0]++' "$_f"; return;;
+      echo "$_text" | awk '!a[$0]++'; return;;
     "-r" )
-      # 重複行を上位から表示(-r)
-      sort "$_f" | uniq -c | sort -r; return;;
+      echo "$_text" | sort | uniq -c | sort -r; return;;
     "-s" )
-      # 重複行を下位から表示(-s)
-      sort "$_f" | uniq -c | sort; return;;
+      echo "$_text" | sort | uniq -c | sort; return;;
   esac
 
   # その他のオプション(ソートしない表示方法)
-  cat "$_f" | awk -v proc="$_proc" '
+  echo "$_text" | awk -v proc="$_option" '
 
     BIGIN { i = 0 }
 
@@ -54,15 +75,12 @@ function main() {
     END {
       switch(proc){
         case "-c":
-          # 重複回数を表示(-c)
           for(j=0; j < i; j++) { printf "%7d %s\n", count[dat[j]], dat[j] }
           break
         case "-o":
-          # 重複行のみを表示(-o)
           for(j=0; j < i; j++) { if (count[dat[j]] != "1") {print dat[j]} }
           break
         default:
-          # 重複行を削除して表示(-d or その他)
           for(j=0; j < i; j++) { if (count[dat[j]] == "1") {print dat[j]} }
           break
       }
