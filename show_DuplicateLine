@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+function main() {
+  # ヘルプ表示
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo 'show_DuplicateLine Ver1.00'
+    echo '  ファイル内の重複行を指定された方法で表示'
+    echo '  show_DuplicateLine [オプション] [ファイル] '
+    echo '    [オプション]'
+    echo '      -d   重複行を削除して表示'
+    echo '      -c   テキストはそのままで重複回数を表示'
+    echo '      -o   重複行のみを表示'
+    echo '    省略   重複行を削除して表示'
+    echo ''
+    echo 'Copyright (c) 2020 kirakira  License: MIT'
+    return
+  fi
+
+  # オプション処理
+  if [ -e "$1" ]; then
+    _f="$1"; _proc="";
+  else
+    if [ ! -e "$2" ]; then echo "あのぉ～ファイル存在しませんけど～！！"; return; fi
+    if [ -d "$2" ]; then echo "ファイル指定して欲しいんですけど～！！"; return; fi
+    _f="$2"; _proc="$1";
+  fi
+
+  # 表示処理
+  cat "$_f" | awk -v file="$_f" -v proc="$_proc" '
+    BIGIN { i = 0 }
+    { dat[i++] = $0; count[$0]++ }
+    END {
+      # 重複行のみを表示
+      if (proc == "-o") for(j=0; j < i; j++) { if (count[dat[j]] != "1") {print dat[j]} }
+      # 重複回数を表示
+      else if(proc == "-c") for(j=0; j < i; j++) { printf "%6d│ %s\n", count[dat[j]], dat[j] }
+      # 重複行を削除して表示
+      else for(j=0; j < i; j++) { if (count[dat[j]] == "1") {print dat[j]} }
+    }
+  '
+}
+
+main "$@"
