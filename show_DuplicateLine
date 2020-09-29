@@ -3,7 +3,7 @@
 function main() {
   # ヘルプ表示
   if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    echo 'show_DuplicateLine Ver1.00'
+    echo 'show_DuplicateLine Ver2.00'
     echo '  ファイル内の重複行を指定された方法で表示'
     echo '  show_DuplicateLine [オプション] [テキスト|ファイル] '
     echo ''
