@@ -8,9 +8,11 @@ function main() {
     echo '  show_DuplicateLine [オプション] [ファイル] '
     echo '    [オプション]'
     echo '      -d   重複行を削除して表示'
+    echo '      -o   重複行のみを表示'
     echo '      -a   重複行だとしても1度目は表示し、それ以降の重複は削除して表示'
     echo '      -c   テキストはそのままで重複回数を表示'
-    echo '      -o   重複行のみを表示'
+    echo '      -r   重複行を上位から表示'
+    echo '      -s   重複行を下位から表示'
     echo '    省略   重複行を削除して表示'
     echo ''
     echo 'Copyright (c) 2020 kirakira  License: MIT'
@@ -26,11 +28,20 @@ function main() {
     _f="$2"; _proc="$1";
   fi
 
+  # 
+  case "$_proc" in
+    "-a" )
+      # 重複行でも1回目は表示(-a)
+      awk '!a[$0]++' "$_f"; return;;
+    "-r" )
+      # 重複行を上位から表示(-r)
+      sort "$_f" | uniq -c | sort -r; return;;
+    "-s" )
+      # 重複行を下位から表示(-s)
+      sort "$_f" | uniq -c | sort; return;;
+  esac
 
-  # 重複行でも1回目は表示
-  if [ "$_proc" = "-a" ]; then awk '!a[$0]++' "$_f"; return; fi;
-
-  # その他のオプション
+  # その他のオプション(ソートしない表示方法)
   cat "$_f" | awk -v proc="$_proc" '
 
     BIGIN { i = 0 }
@@ -44,7 +55,7 @@ function main() {
       switch(proc){
         case "-c":
           # 重複回数を表示(-c)
-          for(j=0; j < i; j++) { printf "%6d│ %s\n", count[dat[j]], dat[j] }
+          for(j=0; j < i; j++) { printf "%7d %s\n", count[dat[j]], dat[j] }
           break
         case "-o":
           # 重複行のみを表示(-o)
